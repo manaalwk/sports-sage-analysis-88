@@ -1,37 +1,96 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { ArrowRight, BarChartHorizontal } from 'lucide-react';
+import { BarChartHorizontal, Menu, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
   className?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({ className }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
-    <header className={cn('w-full py-4 px-6 flex items-center justify-between', className)}>
-      <div className="flex items-center">
-        <div className="flex items-center space-x-2">
-          <BarChartHorizontal className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-semibold">Vizion</h1>
+    <header className={cn('w-full py-4 px-6', className)}>
+      <div className="container mx-auto max-w-7xl">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center">
+            <div className="flex items-center space-x-2">
+              <BarChartHorizontal className="h-6 w-6 text-primary" />
+              <h1 className="text-xl font-semibold">Vizion</h1>
+            </div>
+          </div>
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <a href="#" className="text-sm font-medium hover:text-primary transition-colors">
+              Features
+            </a>
+            <a href="#" className="text-sm font-medium hover:text-primary transition-colors">
+              How It Works
+            </a>
+            <a href="#" className="text-sm font-medium hover:text-primary transition-colors">
+              Pricing
+            </a>
+            <a href="#" className="text-sm font-medium hover:text-primary transition-colors">
+              Documentation
+            </a>
+            <a href="#" className="text-sm font-medium hover:text-primary transition-colors">
+              Blog
+            </a>
+          </nav>
+          
+          {/* CTA Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            <Button variant="outline" size="sm">
+              Sign In
+            </Button>
+            <Button size="sm">
+              Get Started
+            </Button>
+          </div>
+          
+          {/* Mobile Menu Button */}
+          <button 
+            className="md:hidden text-gray-700 hover:text-primary"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
-        <div className="hidden md:flex items-center ml-10 space-x-6">
-          <a href="#" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-            Analysis
-          </a>
-          <a href="#" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-            Library
-          </a>
-          <a href="#" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-            Documentation
-          </a>
-        </div>
-      </div>
-      <div className="flex items-center space-x-3">
-        <button className="glass-button px-4 py-2 text-sm">
-          <span>Get Started</span>
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </button>
+        
+        {/* Mobile Navigation */}
+        {mobileMenuOpen && (
+          <div className="md:hidden pt-4 pb-2">
+            <nav className="flex flex-col space-y-4">
+              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">
+                Features
+              </a>
+              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">
+                How It Works
+              </a>
+              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">
+                Pricing
+              </a>
+              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">
+                Documentation
+              </a>
+              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">
+                Blog
+              </a>
+              <div className="flex flex-col space-y-2 pt-2">
+                <Button variant="outline" size="sm" className="justify-center">
+                  Sign In
+                </Button>
+                <Button size="sm" className="justify-center">
+                  Get Started
+                </Button>
+              </div>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );

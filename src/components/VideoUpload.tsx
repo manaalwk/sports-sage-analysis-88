@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { UploadStatus } from '@/types';
 import { generateRandomAnalysis } from '@/lib/mockData';
 import { toast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
 
 interface VideoUploadProps {
   className?: string;
@@ -115,7 +116,7 @@ const VideoUpload: React.FC<VideoUploadProps> = ({
   return (
     <div 
       className={cn(
-        'rounded-2xl transition-all duration-300 p-1',
+        'rounded-2xl transition-all duration-300',
         uploadStatus.status === 'idle' ? 'h-[350px]' : 'h-[120px]',
         className
       )}
@@ -124,7 +125,7 @@ const VideoUpload: React.FC<VideoUploadProps> = ({
         <div
           className={cn(
             'h-full w-full relative flex flex-col items-center justify-center rounded-xl transition-all duration-300 border-2 border-dashed',
-            dragActive ? 'border-primary bg-primary/5' : 'border-border',
+            dragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-primary/50',
           )}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
@@ -140,35 +141,35 @@ const VideoUpload: React.FC<VideoUploadProps> = ({
           />
           
           <div className="flex flex-col items-center text-center p-6 max-w-md space-y-4">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Upload className="h-8 w-8 text-primary" />
+            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+              <Upload className="h-8 w-8 text-blue-600" />
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Upload a video for analysis</h3>
-              <p className="text-sm text-muted-foreground">
-                Drag and drop a video file, or click to browse
+              <h3 className="text-lg font-semibold">Upload your video for analysis</h3>
+              <p className="text-sm text-gray-600">
+                Drag and drop a video file, or click to browse your files
               </p>
             </div>
             
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-gray-500">
               Supported formats: MP4, MOV, AVI, MKV (max 500MB)
             </div>
             
-            <button className="glass-button mt-4">
+            <Button className="mt-4">
               <FileUp className="mr-2 h-4 w-4" />
               <span>Select Video</span>
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
-        <div className="h-full w-full glass-panel p-6 flex flex-col space-y-3">
+        <div className="h-full w-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col space-y-3">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
+            <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
               {uploadStatus.status === 'complete' ? (
-                <Check className="h-6 w-6 text-primary" />
+                <Check className="h-6 w-6 text-green-600" />
               ) : (
-                <FileVideo className="h-6 w-6 text-primary" />
+                <FileVideo className="h-6 w-6 text-blue-600" />
               )}
             </div>
             <div className="flex-1">
@@ -176,17 +177,20 @@ const VideoUpload: React.FC<VideoUploadProps> = ({
                 <h3 className="text-sm font-medium">
                   {videoFile?.name || 'Video file'}
                 </h3>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-gray-500">
                   {uploadStatus.progress}%
                 </span>
               </div>
-              <div className="mt-2 h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+              <div className="mt-2 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-primary rounded-full transition-all" 
+                  className={cn(
+                    "h-full rounded-full transition-all", 
+                    uploadStatus.status === 'complete' ? 'bg-green-500' : 'bg-blue-600'
+                  )}
                   style={{ width: `${uploadStatus.progress}%` }}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 {uploadStatus.status === 'uploading' && 'Uploading video...'}
                 {uploadStatus.status === 'analyzing' && 'Analyzing with AI...'}
                 {uploadStatus.status === 'complete' && 'Analysis complete!'}
