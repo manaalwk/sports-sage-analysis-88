@@ -44,17 +44,17 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background animate-enter" style={{ '--delay': '0' } as React.CSSProperties}>
+    <div className="min-h-screen flex flex-col bg-background animate-enter">
       <Toaster />
       
       {/* Header */}
-      <Header className="animate-enter" style={{ '--delay': '1' } as React.CSSProperties} />
+      <Header className="animate-enter" />
       
       {/* Main content */}
       <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
         {/* Hero section - Show only when no video is uploaded */}
         {!videoUrl && (
-          <div className="mb-12 text-center animate-enter" style={{ '--delay': '2' } as React.CSSProperties}>
+          <div className="mb-12 text-center animate-enter">
             <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">
               Computer Vision + AI Commentary
             </div>
@@ -74,7 +74,6 @@ const Index = () => {
           setUploadStatus={setUploadStatus}
           uploadStatus={uploadStatus}
           className="max-w-3xl mx-auto mb-8 animate-enter"
-          style={{ '--delay': '3' } as React.CSSProperties}
         />
         
         {/* Analysis section - Show only when video is uploaded and analysis is complete */}
@@ -88,7 +87,6 @@ const Index = () => {
                 currentTime={currentTime}
                 onTimeUpdate={handleTimeUpdate}
                 className="w-full aspect-video animate-enter"
-                style={{ '--delay': '4' } as React.CSSProperties}
               />
               
               <EventTimeline 
@@ -96,7 +94,6 @@ const Index = () => {
                 currentTime={currentTime}
                 onSelectEvent={handleSelectEvent}
                 className="animate-enter"
-                style={{ '--delay': '5' } as React.CSSProperties}
               />
             </div>
             
@@ -106,13 +103,11 @@ const Index = () => {
                 analysis={analysis}
                 currentTime={currentTime}
                 className="w-full aspect-video animate-enter"
-                style={{ '--delay': '6' } as React.CSSProperties}
               />
               
               <AnalysisResult 
                 analysis={analysis}
                 className="animate-enter"
-                style={{ '--delay': '7' } as React.CSSProperties}
               />
             </div>
           </div>
@@ -120,7 +115,7 @@ const Index = () => {
         
         {/* Guide section - Show only when no video is uploaded */}
         {!videoUrl && (
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 animate-enter" style={{ '--delay': '4' } as React.CSSProperties}>
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 animate-enter">
             <UploadGuide />
             
             <div className="glass-panel p-5">
