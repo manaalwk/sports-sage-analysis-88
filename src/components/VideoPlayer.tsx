@@ -34,6 +34,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [showCommentary, setShowCommentary] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [previousCommentary, setPreviousCommentary] = useState('');
+  const [commentaryPaused, setCommentaryPaused] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState(0);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Use the TTS hook for audio commentary
@@ -72,7 +74,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         setCommentary(newCommentary);
         
         // If audio is enabled and it's a new commentary, speak it
-        if (audioEnabled && newCommentary && newCommentary !== previousCommentary) {
+        if (audioEnabled && newCommentary && newCommentary !== previousCommentary && !commentaryPaused && isPlaying) {
           setPreviousCommentary(newCommentary);
           // Temporarily reduce video volume during speech
           const originalVolume = videoRef.current?.volume ?? volume;
@@ -89,19 +91,41 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }
       }
     }
-  }, [currentTime, analysis, commentary, audioEnabled, previousCommentary, speak, volume]);
+  }, [currentTime, analysis, commentary, audioEnabled, previousCommentary, speak, volume, commentaryPaused, isPlaying]);
+  
+  // Toggle commentary pause
+  const toggleCommentaryPause = useCallback(() => {
+    if (commentaryPaused) {
+      // Resume commentary
+      setCommentaryPaused(false);
+      // If video is playing, also resume audio commentary with current text
+      if (isPlaying && audioEnabled && commentary) {
+        speak(commentary);
+      }
+    } else {
+      // Pause commentary
+      setCommentaryPaused(true);
+      // Stop current speech
+      stop();
+    }
+  }, [commentaryPaused, isPlaying, audioEnabled, commentary, speak, stop]);
   
   // Handle play/pause
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
       } else {
         videoRef.current.play();
+        
+        // Resume commentary if it was paused and we're resuming the video
+        if (commentaryPaused) {
+          setCommentaryPaused(false);
+        }
       }
       setIsPlaying(!isPlaying);
     }
-  };
+  }, [isPlaying, commentaryPaused]);
   
   // Handle volume change
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,9 +164,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const handleTimeUpdate = () => {
     if (videoRef.current) {
       const currentVideoTime = videoRef.current.currentTime;
-      const progress = (currentVideoTime / duration) * 100;
-      setProgress(progress);
-      onTimeUpdate(currentVideoTime);
+      
+      // Only update if the time has changed significantly
+      if (Math.abs(currentVideoTime - lastUpdateTime) >= 0.5) {
+        setLastUpdateTime(currentVideoTime);
+        const progress = (currentVideoTime / duration) * 100;
+        setProgress(progress);
+        onTimeUpdate(currentVideoTime);
+      }
     }
   };
   
@@ -154,6 +183,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       const newTime = (seekTime / 100) * duration;
       videoRef.current.currentTime = newTime;
       onTimeUpdate(newTime);
+      
+      // If we seek to a different position, update the commentary immediately
+      if (Math.abs(newTime - lastUpdateTime) > 0.5) {
+        setLastUpdateTime(newTime);
+      }
     }
   };
   
@@ -229,6 +263,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         showCommentary={showCommentary}
         isSpeaking={isSpeaking}
         audioEnabled={audioEnabled}
+        commentaryPaused={commentaryPaused}
+        onTogglePause={toggleCommentaryPause}
       />
       
       {/* Video controls */}
