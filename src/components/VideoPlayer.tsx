@@ -1,9 +1,10 @@
 
-import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, SkipBack } from 'lucide-react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, SkipBack, MessageSquare, Speaker, SpeakerOff } from 'lucide-react';
 import { VideoAnalysis } from '@/types';
 import { cn } from '@/lib/utils';
 import { generateCommentaryForTime } from '@/lib/mockData';
+import { useTTS } from '@/hooks/useTTS';
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -29,7 +30,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [showControls, setShowControls] = useState(true);
   const [commentary, setCommentary] = useState('');
   const [showCommentary, setShowCommentary] = useState(true);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [previousCommentary, setPreviousCommentary] = useState('');
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Use the TTS hook for audio commentary
+  const { speak, isSpeaking, stop } = useTTS();
   
   // Handle video loaded metadata
   useEffect(() => {
@@ -49,7 +55,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   }, [videoUrl]);
   
-  // Handle external time update
+  // Handle external time update and commentary
   useEffect(() => {
     if (videoRef.current && Math.abs(videoRef.current.currentTime - currentTime) > 0.5) {
       videoRef.current.currentTime = currentTime;
@@ -58,9 +64,30 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     // Update commentary based on current time
     if (analysis) {
       const newCommentary = generateCommentaryForTime(currentTime, analysis);
-      setCommentary(newCommentary);
+      
+      // Only update if commentary changed
+      if (newCommentary !== commentary) {
+        setCommentary(newCommentary);
+        
+        // If audio is enabled and it's a new commentary, speak it
+        if (audioEnabled && newCommentary && newCommentary !== previousCommentary) {
+          setPreviousCommentary(newCommentary);
+          // Temporarily reduce video volume during speech
+          const originalVolume = videoRef.current?.volume ?? volume;
+          if (videoRef.current) {
+            videoRef.current.volume = originalVolume * 0.3; // Reduce to 30%
+          }
+          
+          speak(newCommentary).then(() => {
+            // Restore volume after speaking
+            if (videoRef.current) {
+              videoRef.current.volume = originalVolume;
+            }
+          });
+        }
+      }
     }
-  }, [currentTime, analysis]);
+  }, [currentTime, analysis, commentary, audioEnabled, previousCommentary, speak, volume]);
   
   // Handle play/pause
   const togglePlay = () => {
@@ -91,6 +118,21 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setIsMuted(!isMuted);
     }
   };
+  
+  // Toggle audio commentary
+  const toggleAudioCommentary = useCallback(() => {
+    if (audioEnabled) {
+      stop(); // Stop any current speech
+    }
+    setAudioEnabled(!audioEnabled);
+  }, [audioEnabled, stop]);
+  
+  // Stop commentary when video is paused
+  useEffect(() => {
+    if (!isPlaying && isSpeaking) {
+      stop();
+    }
+  }, [isPlaying, isSpeaking, stop]);
   
   // Handle time update
   const handleTimeUpdate = () => {
@@ -195,6 +237,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
       
+      {/* Speaking indicator */}
+      {isSpeaking && audioEnabled && (
+        <div className="absolute top-4 right-4 bg-black/40 p-2 rounded-full backdrop-blur-sm">
+          <div className="flex items-center space-x-1">
+            <div className="w-1.5 h-3 bg-blue-400 rounded-full animate-pulse"></div>
+            <div className="w-1.5 h-5 bg-blue-400 rounded-full animate-pulse delay-75"></div>
+            <div className="w-1.5 h-4 bg-blue-400 rounded-full animate-pulse delay-150"></div>
+          </div>
+        </div>
+      )}
+      
       {/* Video controls */}
       <div 
         className={cn(
@@ -250,9 +303,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             <button
               onClick={toggleCommentary}
               className={`text-white hover:text-primary transition-colors ${!showCommentary ? 'opacity-50' : ''}`}
-              aria-label={showCommentary ? 'Hide Commentary' : 'Show Commentary'}
+              aria-label={showCommentary ? 'Hide Commentary Text' : 'Show Commentary Text'}
             >
-              <span className="text-xs">Commentary</span>
+              <MessageSquare className="h-5 w-5" />
+            </button>
+            
+            <button
+              onClick={toggleAudioCommentary}
+              className={`text-white hover:text-primary transition-colors ${!audioEnabled ? 'opacity-50' : ''}`}
+              aria-label={audioEnabled ? 'Disable Audio Commentary' : 'Enable Audio Commentary'}
+            >
+              {audioEnabled ? <Speaker className="h-5 w-5" /> : <SpeakerOff className="h-5 w-5" />}
             </button>
             
             <div className="flex items-center space-x-2">
