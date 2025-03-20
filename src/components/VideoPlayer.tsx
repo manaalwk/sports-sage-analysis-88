@@ -1,10 +1,12 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, SkipBack, MessageSquare, Speaker, SpeakerOff } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { VideoAnalysis } from '@/types';
 import { cn } from '@/lib/utils';
 import { generateCommentaryForTime } from '@/lib/mockData';
 import { useTTS } from '@/hooks/useTTS';
+import VideoControls from './video/VideoControls';
+import CommentaryOverlay from './video/CommentaryOverlay';
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -166,13 +168,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
   
-  // Format time
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-  
   // Show/hide controls on mouse movement
   const handleMouseMove = () => {
     setShowControls(true);
@@ -228,25 +223,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         onClick={togglePlay}
       />
       
-      {/* Commentary overlay */}
-      {showCommentary && commentary && (
-        <div className="absolute bottom-20 left-0 right-0 px-6 transition-opacity duration-300">
-          <div className="glass-panel py-3 px-4 backdrop-blur-md bg-black/30 rounded-lg">
-            <p className="text-sm font-medium text-white">{commentary}</p>
-          </div>
-        </div>
-      )}
-      
-      {/* Speaking indicator */}
-      {isSpeaking && audioEnabled && (
-        <div className="absolute top-4 right-4 bg-black/40 p-2 rounded-full backdrop-blur-sm">
-          <div className="flex items-center space-x-1">
-            <div className="w-1.5 h-3 bg-blue-400 rounded-full animate-pulse"></div>
-            <div className="w-1.5 h-5 bg-blue-400 rounded-full animate-pulse delay-75"></div>
-            <div className="w-1.5 h-4 bg-blue-400 rounded-full animate-pulse delay-150"></div>
-          </div>
-        </div>
-      )}
+      {/* Commentary overlay component */}
+      <CommentaryOverlay 
+        commentary={commentary}
+        showCommentary={showCommentary}
+        isSpeaking={isSpeaking}
+        audioEnabled={audioEnabled}
+      />
       
       {/* Video controls */}
       <div 
@@ -255,96 +238,25 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           showControls ? 'opacity-100' : 'opacity-0'
         )}
       >
-        {/* Progress bar */}
-        <div className="w-full flex items-center mb-3">
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={progress}
-            onChange={handleSeek}
-            className="w-full h-1.5 bg-white/30 rounded-full appearance-none cursor-pointer accent-primary"
-          />
-        </div>
-        
-        {/* Controls */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button 
-              onClick={togglePlay}
-              className="text-white hover:text-primary transition-colors"
-              aria-label={isPlaying ? 'Pause' : 'Play'}
-            >
-              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-            </button>
-            
-            <button 
-              onClick={skipBackward}
-              className="text-white hover:text-primary transition-colors"
-              aria-label="Skip backward 10 seconds"
-            >
-              <SkipBack className="h-5 w-5" />
-            </button>
-            
-            <button 
-              onClick={skipForward}
-              className="text-white hover:text-primary transition-colors"
-              aria-label="Skip forward 10 seconds"
-            >
-              <SkipForward className="h-5 w-5" />
-            </button>
-            
-            <div className="text-xs text-white">
-              {formatTime(videoRef.current?.currentTime || 0)} / {formatTime(duration)}
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={toggleCommentary}
-              className={`text-white hover:text-primary transition-colors ${!showCommentary ? 'opacity-50' : ''}`}
-              aria-label={showCommentary ? 'Hide Commentary Text' : 'Show Commentary Text'}
-            >
-              <MessageSquare className="h-5 w-5" />
-            </button>
-            
-            <button
-              onClick={toggleAudioCommentary}
-              className={`text-white hover:text-primary transition-colors ${!audioEnabled ? 'opacity-50' : ''}`}
-              aria-label={audioEnabled ? 'Disable Audio Commentary' : 'Enable Audio Commentary'}
-            >
-              {audioEnabled ? <Speaker className="h-5 w-5" /> : <SpeakerOff className="h-5 w-5" />}
-            </button>
-            
-            <div className="flex items-center space-x-2">
-              <button 
-                onClick={toggleMute}
-                className="text-white hover:text-primary transition-colors"
-                aria-label={isMuted ? 'Unmute' : 'Mute'}
-              >
-                {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-              </button>
-              
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volume}
-                onChange={handleVolumeChange}
-                className="w-16 h-1 bg-white/30 rounded-full appearance-none cursor-pointer accent-primary"
-              />
-            </div>
-            
-            <button 
-              onClick={toggleFullscreen}
-              className="text-white hover:text-primary transition-colors"
-              aria-label="Fullscreen"
-            >
-              <Maximize className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
+        <VideoControls 
+          isPlaying={isPlaying}
+          progress={progress}
+          volume={volume}
+          isMuted={isMuted}
+          duration={duration}
+          currentTime={videoRef.current?.currentTime || 0}
+          showCommentary={showCommentary}
+          audioEnabled={audioEnabled}
+          onPlayPause={togglePlay}
+          onSeek={handleSeek}
+          onVolumeChange={handleVolumeChange}
+          onToggleMute={toggleMute}
+          onToggleCommentary={toggleCommentary}
+          onToggleAudioCommentary={toggleAudioCommentary}
+          onSkipForward={skipForward}
+          onSkipBackward={skipBackward}
+          onToggleFullscreen={toggleFullscreen}
+        />
       </div>
       
       {/* Big play button in the center when paused */}
