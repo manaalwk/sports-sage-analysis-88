@@ -3,6 +3,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, SkipBack } from 'lucide-react';
 import { VideoAnalysis } from '@/types';
 import { cn } from '@/lib/utils';
+import { generateCommentaryForTime } from '@/lib/mockData';
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -26,6 +27,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
   const [showControls, setShowControls] = useState(true);
+  const [commentary, setCommentary] = useState('');
+  const [showCommentary, setShowCommentary] = useState(true);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Handle video loaded metadata
@@ -51,7 +54,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (videoRef.current && Math.abs(videoRef.current.currentTime - currentTime) > 0.5) {
       videoRef.current.currentTime = currentTime;
     }
-  }, [currentTime]);
+    
+    // Update commentary based on current time
+    if (analysis) {
+      const newCommentary = generateCommentaryForTime(currentTime, analysis);
+      setCommentary(newCommentary);
+    }
+  }, [currentTime, analysis]);
   
   // Handle play/pause
   const togglePlay = () => {
@@ -152,17 +161,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
   
-  // Get current commentary
-  const getCurrentCommentary = () => {
-    if (!analysis) return '';
-    
-    // Find the closest commentary to the current time
-    const times = Object.keys(analysis.commentary).map(Number);
-    const closestTime = times.reduce((prev, curr) => {
-      return (Math.abs(curr - currentTime) < Math.abs(prev - currentTime) && curr <= currentTime) ? curr : prev;
-    }, 0);
-    
-    return analysis.commentary[closestTime.toString()] || '';
+  // Toggle commentary visibility
+  const toggleCommentary = () => {
+    setShowCommentary(!showCommentary);
   };
   
   return (
@@ -186,11 +187,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       />
       
       {/* Commentary overlay */}
-      <div className="absolute bottom-20 left-0 right-0 px-6 transition-opacity duration-300">
-        <div className="glass-panel py-3 px-4">
-          <p className="text-sm font-medium">{getCurrentCommentary()}</p>
+      {showCommentary && commentary && (
+        <div className="absolute bottom-20 left-0 right-0 px-6 transition-opacity duration-300">
+          <div className="glass-panel py-3 px-4 backdrop-blur-md bg-black/30 rounded-lg">
+            <p className="text-sm font-medium text-white">{commentary}</p>
+          </div>
         </div>
-      </div>
+      )}
       
       {/* Video controls */}
       <div 
@@ -244,6 +247,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
           
           <div className="flex items-center space-x-4">
+            <button
+              onClick={toggleCommentary}
+              className={`text-white hover:text-primary transition-colors ${!showCommentary ? 'opacity-50' : ''}`}
+              aria-label={showCommentary ? 'Hide Commentary' : 'Show Commentary'}
+            >
+              <span className="text-xs">Commentary</span>
+            </button>
+            
             <div className="flex items-center space-x-2">
               <button 
                 onClick={toggleMute}
